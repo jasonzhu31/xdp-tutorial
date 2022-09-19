@@ -25,8 +25,8 @@ struct bpf_map_def SEC("maps") xdp_stats_map = {
 SEC("xdp_stats1")
 int  xdp_stats1_func(struct xdp_md *ctx)
 {
-	// void *data_end = (void *)(long)ctx->data_end;
-	// void *data     = (void *)(long)ctx->data;
+	 void *data_end = (void *)(long)ctx->data_end;
+	 void *data     = (void *)(long)ctx->data;
 	struct datarec *rec;
 	__u32 key = XDP_PASS; /* XDP_PASS = 2 */
 
@@ -49,6 +49,8 @@ int  xdp_stats1_func(struct xdp_md *ctx)
          * Assignment#3: Avoid the atomic operation
          * - Hint there is a map type named BPF_MAP_TYPE_PERCPU_ARRAY
          */
+	__u64 bytes = data_end - data;
+	lock_xadd(&rec->rx_bytes, bytes);
 
 	return XDP_PASS;
 }
