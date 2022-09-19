@@ -133,7 +133,16 @@ int main(int argc, char **argv)
 		return EXIT_FAIL_OPTION;
 	}
 	if (cfg.do_unload) {
-		/* TODO: Miss unpin of maps on unload */
+		
+		if (!cfg.reuse_maps){
+			/* TODO: Miss unpin of maps on unload */
+			char pin_dir[PATH_MAX];
+			int len, err;
+			len = snprintf(pin_dir, PATH_MAX, "%s/%s", pin_basedir, cfg.ifname);
+			err = bpf_object__unpin_maps(bpf_obj, pin_dir);
+			if (err) 
+				fprintf(stderr, "ERR: UNpinning maps in %s\n", pin_dir);
+		}
 		return xdp_link_detach(cfg.ifindex, cfg.xdp_flags, 0);
 	}
 
@@ -148,11 +157,13 @@ int main(int argc, char **argv)
 		       cfg.ifname, cfg.ifindex);
 	}
 
+	if (!cfg.reuse_maps){
 	/* Use the --dev name as subdir for exporting/pinning maps */
-	err = pin_maps_in_bpf_object(bpf_obj, cfg.ifname);
-	if (err) {
-		fprintf(stderr, "ERR: pinning maps\n");
-		return err;
+		err = pin_maps_in_bpf_object(bpf_obj, cfg.ifname);
+		if (err) {
+			fprintf(stderr, "ERR: pinning maps\n");
+			return err;
+		}
 	}
 
 	return EXIT_OK;
