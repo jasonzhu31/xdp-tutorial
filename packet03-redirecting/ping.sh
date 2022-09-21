@@ -1,0 +1,1 @@
+sudo ../testenv/testenv.sh exec -n uno -- ping fc00:dead:cafe:3::1

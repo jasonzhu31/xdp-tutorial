@@ -50,11 +50,28 @@ static const struct option_wrapper long_options[] = {
 	{{0, 0, NULL,  0 }, NULL, false}
 };
 
-static int parse_mac(char *str, unsigned char mac[ETH_ALEN])
+
+static int parse_mac(char *str, unsigned char mac[ETH_ALEN + 1])
 {
 	/* Assignment 3: parse a MAC address in this function and place the
 	 * result in the mac array */
+	// printf("%s\n", str);
+	int length = strlen(str);
+	int temp[ETH_ALEN];
+	if (length != 17)
+		return -1;
 
+	sscanf(str, "%x:%x:%x:%x:%x:%x", 
+		&temp[0], &temp[1], &temp[2], &temp[3], &temp[4], &temp[5]);
+	
+	int i;
+	for (i = 0; i < ETH_ALEN; ++i){
+		mac[i] = (unsigned char)temp[i];
+		printf("%02x ", temp[i]);
+	}
+	mac[ETH_ALEN] = '\0';
+	printf("\n");
+	
 	return 0;
 }
 
@@ -88,8 +105,8 @@ int main(int argc, char **argv)
 	int map_fd;
 	bool redirect_map;
 	char pin_dir[PATH_MAX];
-	unsigned char src[ETH_ALEN];
-	unsigned char dest[ETH_ALEN];
+	unsigned char src[ETH_ALEN + 1];
+	unsigned char dest[ETH_ALEN + 1];
 
 	struct config cfg = {
 		.ifindex   = -1,
@@ -123,9 +140,14 @@ int main(int argc, char **argv)
 		return EXIT_FAIL_OPTION;
 	}
 
+	//printf("src_len = %ld\ndest_len = %ld\n", strlen(src), strlen(dest));
 
 	/* Assignment 3: open the tx_port map corresponding to the cfg.ifname interface */
-	map_fd = -1;
+	struct bpf_map_info info = { 0 };
+	map_fd = open_bpf_map_file(pin_dir, "tx_port", &info);
+
+	if (map_fd < 0) 
+		return EXIT_FAIL_BPF;
 
 	printf("map dir: %s\n", pin_dir);
 
@@ -136,7 +158,10 @@ int main(int argc, char **argv)
 		printf("redirect from ifnum=%d to ifnum=%d\n", cfg.ifindex, cfg.redirect_ifindex);
 
 		/* Assignment 3: open the redirect_params map corresponding to the cfg.ifname interface */
-		map_fd = -1;
+		close(map_fd);
+		map_fd = open_bpf_map_file(pin_dir, "redirect_params", &info);
+		if (map_fd < 0) 
+			return EXIT_FAIL_BPF;
 
 		/* Setup the mapping containing MAC addresses */
 		if (write_iface_params(map_fd, src, dest) < 0) {

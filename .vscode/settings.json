@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "in.h": "c",
+        "in6.h": "c",
+        "socket.h": "c",
+        "bpf_helpers.h": "c",
+        "ip.h": "c",
+        "bpf_endian.h": "c",
+        "features.h": "c",
+        "bpf.h": "c"
+    }
+}
